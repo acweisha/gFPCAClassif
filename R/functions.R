@@ -947,8 +947,8 @@ nb_updated_grid = function(scores, s_mat_hat_train, classes,
 #####
 regression_g = function(z, Curves, tt, k=10, method="REML"){
   z1 = Curves[z,]
-  gam1 <- gam(z1~s(tt, bs = "cr", m=2, k = k),
-              family="binomial", method = method)
+  gam1 <- suppressWarnings(gam(z1~s(tt, bs = "cr", m=2, k = k),
+              family="binomial", method = method))
   return(gam1$fitted.values)
 }
 
@@ -2711,7 +2711,6 @@ get_true_alpha = function(scenario = 1, J){
 
 }
 
-
 fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=NA){
 
   N = dim(s_mat_train)[1]
@@ -2755,6 +2754,8 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
 
   data.s.cur2 = subset(data.s2, data.s2$class==l)
   data.s.cur2 = subset(data.s.cur2, complete.cases(data.s.cur2))
+  data.s.cur2 = subset(data.s.cur2, data.s.cur2$ts > j_lags)
+
 
   c1_names=c()
   for(i in 1:j_lags){
@@ -2776,8 +2777,10 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
   if(!is.na(static_train)[1]){
     formula.cur = paste(formula.cur,  "+followers+friends" , sep= "")
   }
+
   m.bayes <- bayesglm(formula.cur, family = binomial, data = data.s.cur2,
                       prior.df = Inf, scaled = FALSE)
+
 
   a.int = 2
   initial_probs = rep(NA, 2^j_lags)
@@ -2794,8 +2797,9 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
 
   initial_probs = apply(initial_combos, 1, function(x) sum(apply(mat.obs, 1, function(y) sum(y==x)==j_lags ) ) )
   initial_probs = (initial_probs+a.int)/(sum(initial_probs)+a.int*(2^j_lags))
-  #change for tuning paramter
+  #change for tuniting paramter
   #initial_probs = (initial_probs)/(sum(initial_probs))
+
 
   if(aic){
     #return(m.bayes$aic/(dim(data.s.cur2)[1]))
@@ -2804,6 +2808,7 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
   }
   return(list(model = m.bayes, initial_probs=initial_probs))
 }
+
 
 
 predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_test = NA){
@@ -2861,6 +2866,270 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
   return(prod(c(dbinom(data.s.cur$S_dat, 1, pred.prob), initial_probs.test.mat)))
 
 }
+
+
+
+
+
+
+
+
+
+
+
+#####
+#Function: Grid search to estimate predicted values and estimate the values of h
+#
+#Inputs:
+# scores: N x K matrix of 1st level scores in the training set
+# classes: Group labels vector of length N
+# prior_g: vector of prior probability of being in each group, sums up to 1
+# scores_test: N_test x K matrix of scores in the testing set
+# min.h: min possible value for the multiplier
+# max.h: maximum possible value for the multiplier
+# n_grid: number of vlaues between min.h and max.h to search over
+# CV: Number of folds for cross validation
+# return_h: T/F to return the value of the multiplier
+# return_prob: T/F to return group Bayes classifier probability for each individual in testing set
+#
+#Output:
+# predictions from the grid search
+#
+#####
+nb_updated_grid_scores_cat_only = function(scores, cat_covariates_train, classes, prior_g, scores_test, cat_covariates_test,
+                                           min.h = 0.01, max.h = 1.5,
+                                           CV = 10, n_grid = 10, return_h = F, return_prob = F){
+
+  #create matrix for apply functions
+  vec.cv = matrix(1:CV, ncol = 1)
+
+  #create vector of possible CV groups to each account
+  #add extra incase unequal distribution of groups
+  cvgroups = rep(1:CV, (length(classes)/CV+1))
+  #remove the unneeded values
+  cvgroups = cvgroups[1:length(classes)]
+  #randomly assign CV group to each account
+  cvgroups = sample(cvgroups, size = length(classes), replace = F)
+
+  #in case scores are N x 1 matrix that is read as a vector
+  if(length(scores)==length(classes)){
+    #If k == 1 change to vector
+    scores = matrix(scores, ncol = 1)
+    scores_test = matrix(scores_test, ncol = 1)
+  }
+
+  # define function here to use the cvgroups this function
+  # will be used in the following apply statement
+  get.cv.h = function(h.val){
+    groups.probs =
+      apply(vec.cv, 1, function(x)
+        mean(#get guess using the nb_updated function
+          nb_updated_scores_only(scores[cvgroups!=x,], classes[cvgroups!=x],
+                                 c(table(classes[cvgroups!=x])/length(classes[cvgroups!=x])) , #define the new prior probs
+                                 scores[cvgroups==x,], h = h.val) ==  classes[cvgroups==x]))
+    #return the accuracy of the prediction
+    mean(groups.probs)
+  }
+
+  #initialize matrix for apply which contains all of the possible grid values
+  grid.vals.h = matrix(seq(min.h, max.h, length.out = n_grid), ncol = 1)
+  #apply the previously defined functions to get the CV accuracies at each h value
+  h.accs = apply(grid.vals.h, 1, function(h) get.cv.h(h))
+
+  # assign h value based on the one with the largest CV accuracy
+  h = grid.vals.h[which.max(h.accs)]
+  #h = grid.vals.h[max(which(h.accs==max(h.accs)))]
+
+  #get K
+  nd = dim(scores)[2]
+  #get number of groups
+  ng = length(unique(classes))
+  #initialize list
+  densities = list()
+  #estimate density at each K for each group
+  for(i in 1:ng){
+    densities[[i]]=list()
+    for(k in 1:nd){
+      densities[[i]][[k]] = density(scores[classes==i,k],
+                                    kernel = "gaussian",
+                                    bw = h*sd(scores[classes==i,k]))
+    }
+  }
+
+  # get number of test functions
+  n_test = dim(scores_test)[1]
+  p.mat = matrix(NA, nrow = n_test, ncol = length(prior_g))
+  vec = matrix(1:n_test, ncol = 1)
+  #For each group get the Bayes classifier value of probability of being in that group
+  for(i in 1:ng){
+    #apply for each user get the probability for each component in that group
+    pdf.vals.test.1 = t(apply(vec, 1,
+                              function(x)  get_pdf_den2(densities, scores_test, rep(i, n_test), x)))
+    #apply for each user to get the product of those K probabilities
+    pdf_vals = apply(pdf.vals.test.1, 1, prod)
+
+    cur_prod = rep(NA, n_test)
+
+    for(p in 1:(dim(cat_covariates_train)[2])){
+
+      cur.levels = unique(c(unlist(cat_covariates_train[,p]), unlist(cat_covariates_test[,p])))
+      alpha_new = 5
+      cat_covariates_train_cur_group = cat_covariates_train[which(Ys_train==i),]
+      cur_cat = table(factor(unlist(cat_covariates_train_cur_group[,p]), cur.levels)) + alpha_new
+      cur.var = cur_cat / sum(cur_cat)
+
+      if(p==1){
+        cur_prod = unlist(apply(vec, 1, function(x) cur.var[which(unlist(cat_covariates_test[x,p]) == cur.levels)]))
+      }else{
+        cur_prod = cur_prod * unlist(apply(vec, 1, function(x) cur.var[which(unlist(cat_covariates_test[x,p]) == cur.levels)]))
+      }
+
+    }
+
+    #multiply by prior probability
+    p.mat[,i] = prior_g[i]* pdf_vals * cur_prod #p.mat is now matrix of Bayes probabilities
+  }
+
+  #returns matrix of probabilies for each group
+  if(return_prob){
+    return(p.mat/rowSums(p.mat))
+  }
+
+  #group prediction is based on maximum posterior probability
+  guess = apply(p.mat, 1, which.max)
+
+  #print(h)
+
+  if(return_h){
+    return(h)
+  }
+
+  #return guesses
+  return(guess)
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####
+#Function: Grid search to estimate predicted values and estimate the values of h
+#
+#Inputs:
+# scores: N x K matrix of 1st level scores in the training set
+# classes: Group labels vector of length N
+# prior_g: vector of prior probability of being in each group, sums up to 1
+# scores_test: N_test x K matrix of scores in the testing set
+# min.h: min possible value for the multiplier
+# max.h: maximum possible value for the multiplier
+# n_grid: number of vlaues between min.h and max.h to search over
+# CV: Number of folds for cross validation
+# return_h: T/F to return the value of the multiplier
+# return_prob: T/F to return group Bayes classifier probability for each individual in testing set
+#
+#Output:
+# predictions from the grid search
+#
+#####
+nb_updated_grid_cat_only = function(scores, s_mat_hat_train, classes, cat_covariates_train, cat_covariates_test,
+                           prior_g, scores_test, s_mat_hat_test, alpha_js = NA,
+                           min.h = 0.4, max.h = 1.6,
+                           CV = 5, n_grid = 5, return_h = F, return_prob = F, P_max = 5,
+                           static_train = NA, static_test = NA){
+
+  #create matrix for apply functions
+  vec.cv = matrix(1:CV, ncol = 1)
+
+
+  #create vector of possible CV groups to each account
+  #add extra incase unequal distribution of groups
+  cvgroups = rep(1:CV, (length(classes)/CV+1))
+  #remove the unneeded values
+  cvgroups = cvgroups[1:length(classes)]
+  #randomly assign CV group to each account
+  cvgroups = sample(cvgroups, size = length(classes), replace = F)
+
+  #in case scores are N x 1 matrix that is read as a vector
+  if(length(scores)==length(classes)){
+    #If k == 1 change to vector
+    scores = matrix(scores, ncol = 1)
+    scores_test = matrix(scores_test, ncol = 1)
+  }
+
+  # define function here to use the cvgroups this function
+  # will be used in the following apply statement
+  get.cv.h.static = function(h.val){
+    groups.probs =
+      apply(vec.cv, 1, function(x)
+        mean(#get guess using the nb_updated function
+          nb_updated(scores[cvgroups!=x,], classes[cvgroups!=x],
+                     c(table(classes[cvgroups!=x])/length(classes[cvgroups!=x])) , #define the new prior probs
+                     scores[cvgroups==x,],
+                     s_mat_hat_train = s_mat_hat_train[cvgroups!=x,],
+                     s_mat_hat_test = s_mat_hat_train[cvgroups==x,],
+                     h = h.val, alpha_js = alpha_js, P_max = P_max,
+                     static_train = static_train[cvgroups!=x, ],
+                     static_test = static_train[cvgroups==x, ]) ==  classes[cvgroups==x]))
+    #return the accuracy of the prediction
+    mean(groups.probs)
+  }
+  get.cv.h = function(h.val){
+    groups.probs =
+      apply(vec.cv, 1, function(x)
+        mean(#get guess using the nb_updated function
+          nb_updated(scores[cvgroups!=x,], classes[cvgroups!=x],
+                     c(table(classes[cvgroups!=x])/length(classes[cvgroups!=x])) , #define the new prior probs
+                     scores[cvgroups==x,],
+                     s_mat_hat_train = s_mat_hat_train[cvgroups!=x,],
+                     s_mat_hat_test = s_mat_hat_train[cvgroups==x,],
+                     h = h.val, alpha_js = alpha_js, P_max = P_max) ==  classes[cvgroups==x]))
+    #return the accuracy of the prediction
+    mean(groups.probs)
+  }
+
+  #initialize matrix for apply which contains all of the possible grid values
+  grid.vals.h = seq(min.h, max.h, length.out = n_grid)
+  #apply the previously defined functions to get the CV accuracies at each h value
+  #if(!is.na(static_train)[1]){
+  #  h.accs = sapply(grid.vals.h,
+  #                  function(x) get.cv.h.static(x))
+  #}else{
+    h.accs = sapply(grid.vals.h,
+                    function(x) get.cv.h(x))
+  #}
+
+  # assign h value based on the one with the largest CV accuracy
+  h = h.accs[which.max(h.accs)]
+  #h = grid.vals.h[max(which(h.accs==max(h.accs)))]
+
+  guess = nb_updated(scores = scores, classes = classes,
+                     prior_g = c(table(classes)/length(classes)),
+                     scores_test =  scores_test,
+                     s_mat_hat_train = s_mat_hat_train,
+                     s_mat_hat_test = s_mat_hat_test, h=h, alpha_js = alpha_js, P_max = P_max,
+                     static_train = static_train, static_test = static_test)
+
+
+
+  if(return_h){
+    return(h)
+  }
+
+  #return guesses
+  return(guess)
+
+}
+
 
 
 

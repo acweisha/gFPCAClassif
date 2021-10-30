@@ -25,7 +25,7 @@ gsFPCA <- function(X_dat_s, Ys_train, static_covariates = NA, pve = 0.95, k = NA
   tt=seq(0,1, len=D)
 
 
-  if(!is.na(static_covariates)){
+  if(!is.na(static_covariates)[1]){
     if((N != (dim(static_covariates)[1])) ){
       stop("Dimensions of Covariates and Binary Curves do not match")
     }
@@ -103,6 +103,7 @@ gsFPCA <- function(X_dat_s, Ys_train, static_covariates = NA, pve = 0.95, k = NA
   return_vals$eigen_vals = eigen_vals1
   return_vals$static_covariates = static_covariates
   return_vals$classes = Ys_train
+  return_vals$mu_t = mu_t_hat
 
   return(gsFPCA.model = return_vals)
 
@@ -126,7 +127,7 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
   N_test = dim(X_dat_s_test)[1]
   tt=seq(0,1, len=D)
 
-  if(!is.na(static_covariates_test)){
+  if(!is.na(static_covariates_test)[1]){
     if((N_test != (dim(static_covariates_test)[1]))){
       stop("Dimensions of Covariates and Binary Curves do not match")
     }
@@ -137,6 +138,7 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
   eigen_vals1 = gsFPCA.model$eigen_vals
   static_covariates = gsFPCA.model$static_covariates
   Ys_train  = gsFPCA.model$classes
+  mu_t_hat = gsFPCA.model$mu_t
 
   #if vector
   if(is.null(dim(eigen_funcs1))){
@@ -146,6 +148,9 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
   if(D != dim(eigen_funcs1)[1]){
     stop("Dimensions of new curves do not match eigenfunctions length")
   }
+
+  prior_scales_test = eigen_vals1
+
 
   #just like before define data frame
   dta = data.frame(index = rep(tt, N_test),
@@ -176,7 +181,7 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
   prior_g = c(table(Ys_train)/length(Ys_train))
   #run non parametric bayes classifier
 
-  if(is.na(covariates_train)[1]){
+  if(is.na(static_covariates)[1]){
     guess = nb_updated_grid_scores_only(scores_train,
                                         Ys_train,
                                         prior_g, scores_test,
@@ -199,9 +204,9 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
 
     #need to update for categorical variables
 
-    guess = nb_updated_grid_scores_only(scores_train,
+    guess = nb_updated_grid_scores_cat_only(scores_train2, cat_covariates_train,
                                         Ys_train,
-                                        prior_g, scores_test,
+                                        prior_g, scores_test2, cat_covariates_test,
                                         min.h = 0.3, max.h = 1.5)
 
   }
@@ -210,3 +215,274 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
   return(new_groups = guess)
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###
+# wrapping function for Multilevel level fpca
+#' @curves N*J x m matrix of binary data
+#' @Ys_train N long vector of responses
+#' @static_covariates N x Q Dataframe of covariates
+#' @pve1 Proportion of variation explained in the first level eigenfunction
+#' @pve2 Proportion of variation explained in the first level eigenfunction
+#' @MC Markov Chain
+#' @static_covariates Dynamic_covariates
+#' @q Lag in the generalized Autoregressive model
+#' @return list of information required to build the model and predict new groups
+#' @export
+###
+
+gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pve1 = 0.95,
+                   pve2 = 0.95, k = NA, q =3, approximation = "linear", gar_covariates = NA){
+
+  D = dim(X_dat_m)[2]
+
+  if(length(Js)>1){
+    N = length(Js)
+    #set check if Js and N do not match up
+  }else{
+    N = dim(X_dat_m)[2]/Js
+    Js = rep(Js, N)
+  }
+
+  tt=seq(0,1, len=D)
+
+
+  if(!is.na(static_covariates)[1]){
+    if((N != (dim(static_covariates)[1])) ){
+      stop("Dimensions of Covariates and Binary Curves do not match")
+    }
+  }
+  if(N != length(Ys_train)){
+    stop("Dimensions of Covariates and Binary Curves do not match")
+  }
+
+  J = Js[1]
+
+  posting_days = 1-(rowSums(X_dat_m)==0)
+  s_mat_train = t(matrix(as.numeric(matrix(posting_days, nrow = J)), nrow = J))
+  Js_s_train = rowSums(s_mat_train)
+
+  #Get the parsimonious distribution
+  if(approximation == "linear"){
+    cur.train = multilevel_linear_fpca(X_dat_m, J,
+                                              pve1 = pve1, pve2 = pve2)
+  }else{
+    cur.train = multilevel_exponential_fpca(X_dat_m, J,
+                                             pve1 = pve1, pve2 = pve2)
+  }
+
+  mu_t_hat = cur.train$mu_hat
+  eigen_vals1 = cur.train$eigen_vals1
+  eigen_funcs1 = cur.train$eigen_funcs1
+  eigen_vals2 = cur.train$eigen_vals2
+  eigen_funcs2 = cur.train$eigen_funcs2
+
+  posting_days = (rowSums(X_dat_m)>1)
+  s_mat_hat_train = t(matrix(as.numeric(matrix(posting_days, nrow = J)), nrow = J))
+
+  scores_train = estimate_scores(X_dat_m, s_mat = s_mat_train, I=N,  J=J,
+                                 eigen_vals1, eigen_vals2,
+                                 eigen_funcs1, eigen_funcs2, mu_t_hat)
+
+  return_vals = list( )
+
+  return_vals$scores_train = scores_train
+  return_vals$eigen_funcs = eigen_funcs1
+  return_vals$eigen_vals = eigen_vals1
+  return_vals$static_covariates = static_covariates
+  return_vals$classes = Ys_train
+  return_vals$mu_t = mu_t_hat
+  return_vals$gAR = gAR
+  return_vals$J = J
+
+  if(gAR){
+
+    gar_models_ls = list()
+
+    ng = length(unique(Ys_train))
+
+    for(l in 1:ng){
+
+      gar_models_ls[[l]] = fit_ajs_model(l, q, s_mat_hat_train, classes = Ys_train, static_train = gar_covariates)
+
+    }
+
+    return_vals$gar_models_ls = gar_models_ls
+    return_vals$s_mat_train = s_mat_train
+    return_vals$q = q
+
+  }
+
+  return(gsFPCA.model = return_vals)
+
+}
+
+
+
+
+
+
+
+###
+# wrapping function for single level fpca
+#' @curves N x m matrix of binary data
+#' @static_covariates N x Q dataframe of covariates
+#' @pve Proportion of varation explained
+#' @return A matrix of the infile
+#' @export
+###
+
+gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = NA){
+
+
+  scores_train = gmFPCA.model$scores_train
+  eigen_funcs1 = gmFPCA.model$eigen_funcs1
+  eigen_vals1 = gmFPCA.model$eigen_vals1
+  eigen_funcs2 = gmFPCA.model$eigen_funcs2
+  eigen_vals2 = gmFPCA.model$eigen_vals2
+  static_covariates = gmFPCA.model$static_covariates
+  Ys_train  = gmFPCA.model$classes
+  mu_t_hat = gmFPCA.model$mu_t
+  gAR = gmFPCA.model$gAR
+  J = gmFPCA.model$J
+
+  if(gAR){
+
+    gar_models_ls = gmFPCA.model$gar_models_ls
+    s_mat_train  = gmFPCA.model$s_mat_train
+    q = gmFPCA.model$q
+
+  }
+
+  #if vector
+  if(is.null(dim(eigen_funcs1))){
+    matrix(eigen_funcs1, ncol = 1)
+  }
+
+  if(D != dim(eigen_funcs1)[1]){
+    stop("Dimensions of new curves do not match eigenfunctions length")
+  }
+
+  D = dim(X_dat_m_test)[2]
+  N_test = dim(X_dat_m_test)[1]/J
+  tt=seq(0,1, len=D)
+
+
+  if(!is.na(static_covariates_test)[1]){
+    if((N_test != (dim(static_covariates_test)[1]))){
+      stop("Dimensions of Covariates and Binary Curves do not match")
+    }
+  }
+
+  J_test = J
+  posting_days = 1-(rowSums(Curves_test)==0)
+  s_mat_test = t(matrix(as.numeric(matrix(posting_days, nrow = J_test)), nrow = J_test))
+  Js_s_test = rowSums(s_mat_test)
+
+  #estimate scores testing set
+  scores_test=estimate_scores(Curves_test, s_mat = s_mat_test, I=N_test, J=J_test,
+                              eigen_vals1, eigen_vals2,
+                              eigen_funcs1, eigen_funcs2, mu_t_hat)
+
+  #step 4
+  prior_g = c(table(Ys_train)/length(Ys_train))
+
+
+  if(!gar){
+    if(is.na(static_covariates)[1]){
+      guess = nb_updated_grid_scores_only(scores_train,
+                                          Ys_train,
+                                          prior_g, scores_test,
+                                          min.h = 0.3, max.h = 1.5)
+    }else{
+
+      numeric_cols = which(sapply(static_covariates, is.numeric))
+
+      cur.mat = data.matrix(static_covariates[,numeric_cols])
+      scores_train2 = cbind(scores_train, cur.mat)
+
+      cur.mat = data.matrix(static_covariates_test[,numeric_cols])
+      scores_test2 = cbind(scores_test, cur.mat)
+
+      #need to update the categorical data
+
+      cat_covariates_train  = static_covariates[,-numeric_cols]
+      cat_covariates_test  = static_covariates_test[,-numeric_cols]
+
+
+      #need to update for categorical variables
+
+      guess = nb_updated_grid_scores_cat_only(scores_train2, cat_covariates_train,
+                                              Ys_train,
+                                              prior_g, scores_test2, cat_covariates_test,
+                                              min.h = 0.3, max.h = 1.5)
+
+    }
+  }else{
+
+    if(is.na(static_covariates)[1]){
+      guess = nb_updated_grid(scores = scores_train, classes = Ys_train_reduced,
+                              prior_g = c(table(Ys_train_reduced)/length(Ys_train_reduced)),
+                              scores_test =  scores_test,
+                              s_mat_hat_test =  s_mat_hat_test[users_to_keep_test, 1:J_test_max],
+                              s_mat_hat_train =  s_mat_hat_train[users_to_keep_train,])
+    }else{
+
+      numeric_cols = which(sapply(static_covariates, is.numeric))
+
+      cur.mat = data.matrix(static_covariates[,numeric_cols])
+      scores_train2 = cbind(scores_train, cur.mat)
+
+      cur.mat = data.matrix(static_covariates_test[,numeric_cols])
+      scores_test2 = cbind(scores_test, cur.mat)
+
+      #need to update the categorical data
+
+      cat_covariates_train  = static_covariates[,-numeric_cols]
+      cat_covariates_test  = static_covariates_test[,-numeric_cols]
+
+
+      #need to update for categorical variables
+
+      guess = nb_updated_grid_cat_only(scores = scores_train, classes = Ys_train_reduced,
+                              prior_g = c(table(Ys_train_reduced)/length(Ys_train_reduced)),
+                              scores_test =  scores_test,
+                              s_mat_hat_test =  s_mat_hat_test[users_to_keep_test, 1:J_test_max],
+                              s_mat_hat_train =  s_mat_hat_train[users_to_keep_train,])
+
+    }
+
+
+
+  }
+
+  return(new_groups = guess)
+
+}
+
+
+
+
+
