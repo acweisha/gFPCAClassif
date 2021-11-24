@@ -715,18 +715,28 @@ get_pdf_den2 = function(densities, scores, classes, i){
 
     #get new score
     xnew = score_cur[k]
+    #get value in the density
+    #pdf.vals[k]  = approx_fun_den(xnew)
+    #changed to probability approx
+    delta0 = diff(dens_cur_k$x)[1]
+
+    lower0 = xnew
+    upper0 = xnew+delta0
 
     #if new value is outside of defined range
-    if(xnew<=min(dens_cur_k$x)){
+    if(lower0<=min(dens_cur_k$x)){
       xnew=min(dens_cur_k$x)
+      lower0 = xnew
+      upper0 = xnew+delta0
     }
     #if new vlaue is outside of defined range
-    if(xnew>=max(dens_cur_k$x)){
+    if(upper0>=max(dens_cur_k$x)){
       xnew=max(dens_cur_k$x)
+      lower0 = xnew - delta0
+      upper0 = xnew
     }
 
-    #get value in the desnity
-    pdf.vals[k]  = approx_fun_den(xnew)
+    pdf.vals[k]  = c(c(integrate(approx_fun_den, lower = lower0, upper = upper0))$value)
 
   }
   return(pdf.vals)
@@ -747,7 +757,7 @@ get_pdf_den2 = function(densities, scores, classes, i){
 #
 #####
 nb_updated = function(scores, classes, prior_g, scores_test,
-                      s_mat_hat_train, s_mat_hat_test, alpha_js=NA,  h = 1.06, P_max = 10,
+                      s_mat_hat_train, s_mat_hat_test, alpha_js=NA,  h = 1.06, P_max = 3,
                       static_train = NA, static_test = NA){
 
   #in case scores are N x 1 matrix that is read as a vector
@@ -787,7 +797,7 @@ nb_updated = function(scores, classes, prior_g, scores_test,
   #}
 
   #set ps to 3
-  get_ps = rep(3, ng)
+  get_ps = rep(P_max, ng)
 
   models_ls = list()
   p.mat_s = matrix(NA, nrow = n_test, ncol = length(unique(classes)))
@@ -844,7 +854,7 @@ nb_updated = function(scores, classes, prior_g, scores_test,
 nb_updated_grid = function(scores, s_mat_hat_train, classes,
                            prior_g, scores_test, s_mat_hat_test, alpha_js = NA,
                            min.h = 0.4, max.h = 1.6,
-                           CV = 5, n_grid = 5, return_h = F, return_prob = F, P_max = 5,
+                           CV = 5, n_grid = 5, return_h = F, return_prob = F, P_max = 3,
                            static_train = NA, static_test = NA){
 
   #create matrix for apply functions
@@ -945,9 +955,9 @@ nb_updated_grid = function(scores, s_mat_hat_train, classes,
 # Fitted values from the game function for subject z
 #
 #####
-regression_g = function(z, Curves, tt, k=10, method="REML"){
+regression_g = function(z, Curves, tt, k=10, method="REML", bs0 ="cr"){
   z1 = Curves[z,]
-  gam1 <- suppressWarnings(gam(z1~s(tt, bs = "cr", m=2, k = k),
+  gam1 <- suppressWarnings(gam(z1~s(tt, bs = bs0, m=2, k = k),
               family="binomial", method = method))
   return(gam1$fitted.values)
 }
@@ -1137,7 +1147,7 @@ exponential_fpca <-  function(Curves_binary, J, pve=0.95,
 #
 ####
 multilevel_exponential_fpca <-  function(Curves_binary, s_mat, J, pve1=0.95, pve2 = 0.95,
-                                         fix_number_of_functions = 2){
+                                         fix_number_of_functions = NA){
 
 
   #Curves_binary = Curves_train
@@ -1383,7 +1393,7 @@ func.cur = function(i.cur, X_dat, N){
 #
 ####
 multilevel_exponential_fpca <-  function(X_dat, J, pve1=0.99, pve2 = 0.99,
-                                         fix_number_of_functions = 2){
+                                         fix_number_of_functions = NA,  k = 5, bs0 = "cr"){
 
   #X_dat = Curves_train
   D = dim(X_dat)[2]
@@ -1527,7 +1537,7 @@ multilevel_exponential_fpca <-  function(X_dat, J, pve1=0.99, pve2 = 0.99,
 }
 
 
-bivariate_smooth = function(K_b, k = 10){
+bivariate_smooth = function(K_b, k = 10, bs0 = "cr"){
 
   D = dim(K_b)[1]
   #bivariately smooth the resulting matrix
@@ -1539,7 +1549,7 @@ bivariate_smooth = function(K_b, k = 10){
   Bs = data.frame(val = Bs[,1], t1 = Bs[,2], t2 = Bs[,3])
   #smooth the covariance matrix, need large theta because we have lots of data points
   beta_ts2 = gam(val~te(t1, t2,
-                        bs = "cr", m=2, k=10),
+                        bs = bs0, m=2, k=10),
                  method = "REML", family="gaussian", data = Bs)
   newdat = data.frame(t1 = (1:D)/D, t2 = (1:D)/D)
   diag.vals = predict(beta_ts2, newdata = newdat)
@@ -1655,7 +1665,7 @@ k_w_func = function(i.cur, X_dat, N){
 
 
 multilevel_linear_fpca = function(X_dat, J, pve1=0.95, pve2 = 0.95,
-                                  fix_number_of_functions = NA){
+                                  fix_number_of_functions = NA,  k = 5, bs0 = "cr"){
 
   #X_dat = Curves_train
   D = dim(X_dat)[2]
@@ -1697,7 +1707,7 @@ multilevel_linear_fpca = function(X_dat, J, pve1=0.95, pve2 = 0.95,
   z1 = logit(z1)
 
   #smooth mean function
-  gam1 <- gam(z1~s(tt, bs = "cr", m=2, k = 10),
+  gam1 <- gam(z1~s(tt, bs = bs0, m=2, k = 10),
               family="gaussian", method = "REML")
   mu_hat = gam1$fitted.values
   #obtain smoothed probability function
@@ -1707,7 +1717,7 @@ multilevel_linear_fpca = function(X_dat, J, pve1=0.95, pve2 = 0.95,
   #estimate first level covariance matrix
   K_v = matrix(rowMeans(sapply(1:N, function(x) k_v_func(x, X_dat, N) )), ncol = D)
   # bivariately smooth matrix
-  K_v = bivariate_smooth(K_v, k = 10)
+  K_v = bivariate_smooth(K_v, k = k, bs0 = bs0)
   Sigma_v = (K_v-t(t(invlogit(mu_hat)))%*%invlogit(mu_hat))/(t(t(d_logit((mu_hat))))%*%d_logit((mu_hat)))
   #matplot(Sigma_v, type="l")
   Sigma_v = make_pos_semi_def(Sigma_v)
@@ -1720,7 +1730,7 @@ multilevel_linear_fpca = function(X_dat, J, pve1=0.95, pve2 = 0.95,
   Sigma_w = K_w/((t(t(d_logit((mu_hat))))%*%d_logit((mu_hat))))
   #Sigma_w = bivariate_smooth(Sigma_w, k = 10)
   Sigma_w = make_pos_semi_def(Sigma_w)
-  Sigma_w = bivariate_smooth(Sigma_w, k = 5)
+  Sigma_w = bivariate_smooth(Sigma_w, k = k, bs0 = bs0)
   Sigma_w = round(Sigma_w, 15)
 
   Sigma_z = Sigma_v+Sigma_w
@@ -2721,8 +2731,8 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
                              class = rep(classes, each = J),
                              individual = as.factor(rep(1:N, each = J)) )
   if(!is.na(static_train)[1]){
-    data.s2 = cbind.data.frame(data.s2,  followers = rep(static_train$followers_count, each = J),
-                               friends = rep(static_train$friends_count, each = J))
+    covariates = static_train[rep(seq_len(nrow(static_train)), each = J),]
+    data.s2 = cbind.data.frame(data.s2,  covariates)
   }
 
   if(j_lags == 0){
@@ -2731,8 +2741,17 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
     data.s.cur2 = subset(data.s.cur2, complete.cases(data.s.cur2))
 
     if(!is.na(static_train)[1]){
-      m.bayes <- bayesglm(S_dat ~ 1 +followers+friends, family = binomial, data = data.s.cur2,
+
+      cur.names = names(data.s2)
+      cov.names = cur.names[(length(cur.names)-dim(static_train)[2]+1):(length(cur.names))]
+      cov.names.formatted = paste(cov.names, sep= "", collapse = " + ")
+
+      formula.cur = paste("S_dat ~ 1 + ",  cov.names.formatted , sep= "")
+
+
+      m.bayes <- bayesglm(formula.cur, family = binomial, data = data.s.cur2,
                           prior.df = Inf, scaled = FALSE)
+
     }else{
 
       m.bayes <- bayesglm(S_dat ~ 1, family = binomial, data = data.s.cur2,
@@ -2746,6 +2765,10 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
     return(m.bayes)
 
   }
+
+
+
+
 
   for(j in 1:j_lags){
     lagj = c(rep(NA, j), c(t(s_mat_train))[1:(N*J-j)])
@@ -2775,7 +2798,13 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
   }
 
   if(!is.na(static_train)[1]){
-    formula.cur = paste(formula.cur,  "+followers+friends" , sep= "")
+
+    cov.names = names(covariates)
+    #cov.names = cur.names[(length(cur.names)-dim(static_train)[2]+1):(length(cur.names))]
+    cov.names.formatted = paste(cov.names, sep= "", collapse = " + ")
+
+    formula.cur = paste(formula.cur, " + ",  cov.names.formatted , sep= "")
+
   }
 
   m.bayes <- bayesglm(formula.cur, family = binomial, data = data.s.cur2,
@@ -2820,18 +2849,24 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
   model_cur = models_ls[[l]]$model
   initial_probs = models_ls[[l]]$initial_probs
   s_mat_cur = s_mat_test[i, ]
-  data.s.cur = cbind.data.frame(S_dat = s_mat_cur,
-                                dow = as.factor(rep(1:7, ceiling(J/7))[1:J]))
+  data.s.cur = cbind.data.frame(S_dat = s_mat_cur)
 
-  if(!is.na(static_test)){
-    data.s.cur = cbind.data.frame(data.s.cur,  followers = rep(static_test$followers_count[i], each = J),
-                                  friends = rep(static_test$friends_count[i], each = J))
+  if(!is.na(static_test)[1]){
+    # data.s.cur = cbind.data.frame(data.s.cur,  followers = rep(static_test$followers_count[i], each = J),
+    #                               friends = rep(static_test$friends_count[i], each = J))
+    covariates = static_test[rep(i, each = J),]
+    data.s.cur = cbind.data.frame(data.s.cur,  covariates)
   }
 
   if(p==0){
 
     #pred.prob = invlogit(predict(model_cur, data.s.cur))
-    pred.prob = invlogit(models_ls[[l]]$coefficients)
+    #pred.prob = invlogit(models_ls[[l]]$coefficients)
+    #return(prod(dbinom(data.s.cur$S_dat, 1, pred.prob)))
+
+    pred.prob = models_ls[[l]]
+    #apply(data.s.cur, 1, function(x) predict(x, pred.prob))
+    pred.prob = invlogit(predict(pred.prob,  data.s.cur))
     return(prod(dbinom(data.s.cur$S_dat, 1, pred.prob)))
 
   }
@@ -2855,8 +2890,7 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
   #get_probs
   pred.prob = invlogit(predict(model_cur, data.s.cur))
 
-
-  initial_probs
+  #initial_probs
   initial_combos = as.matrix.data.frame(expand.grid(rep(list(0:1),p)))
   s_mat_test.initial = s_mat_test[i,1:p]
   #which.inits = apply(s_mat_test.initial, 1, function(x) which(apply(initial_combos, 1, function(z) sum(z==x)==p )))
@@ -3130,6 +3164,210 @@ nb_updated_grid_cat_only = function(scores, s_mat_hat_train, classes, cat_covari
 
 }
 
+
+
+
+
+
+
+
+
+
+
+#####
+#Function: Grid search to estimate predicted values and estimate the values of h
+#
+#Inputs:
+# scores: N x K matrix of 1st level scores in the training set
+# classes: Group labels vector of length N
+# prior_g: vector of prior probability of being in each group, sums up to 1
+# scores_test: N_test x K matrix of scores in the testing set
+# min.h: min possible value for the multiplier
+# max.h: maximum possible value for the multiplier
+# n_grid: number of vlaues between min.h and max.h to search over
+# CV: Number of folds for cross validation
+# return_h: T/F to return the value of the multiplier
+# return_prob: T/F to return group Bayes classifier probability for each individual in testing set
+#
+#Output:
+# predictions from the grid search
+#
+#####
+nb_updated_grid_cat = function(scores, s_mat_hat_train, classes, cat_covariates_train, cat_covariates_test,
+                               prior_g, scores_test, s_mat_hat_test, alpha_js = NA,
+                               min.h = 0.4, max.h = 1.6,
+                               CV = 5, n_grid = 5, return_h = F, return_prob = F, P_max = 3,
+                               static_train = NA, static_test = NA){
+
+  #create matrix for apply functions
+  vec.cv = matrix(1:CV, ncol = 1)
+
+
+  #create vector of possible CV groups to each account
+  #add extra incase unequal distribution of groups
+  cvgroups = rep(1:CV, (length(classes)/CV+1))
+  #remove the unneeded values
+  cvgroups = cvgroups[1:length(classes)]
+  #randomly assign CV group to each account
+  cvgroups = sample(cvgroups, size = length(classes), replace = F)
+
+  #in case scores are N x 1 matrix that is read as a vector
+  if(length(scores)==length(classes)){
+    #If k == 1 change to vector
+    scores = matrix(scores, ncol = 1)
+    scores_test = matrix(scores_test, ncol = 1)
+  }
+
+  # define function here to use the cvgroups this function
+  # will be used in the following apply statement
+  get.cv.h.static = function(h.val){
+    groups.probs =
+      apply(vec.cv, 1, function(x)
+        mean(#get guess using the nb_updated function
+          nb_updated(scores[cvgroups!=x,], classes[cvgroups!=x],
+                     c(table(classes[cvgroups!=x])/length(classes[cvgroups!=x])) , #define the new prior probs
+                     scores[cvgroups==x,],
+                     s_mat_hat_train = s_mat_hat_train[cvgroups!=x,],
+                     s_mat_hat_test = s_mat_hat_train[cvgroups==x,],
+                     h = h.val, alpha_js = alpha_js, P_max = P_max,
+                     static_train = static_train[cvgroups!=x, ],
+                     static_test = static_train[cvgroups==x, ]) ==  classes[cvgroups==x]))
+    #return the accuracy of the prediction
+    mean(groups.probs)
+  }
+  get.cv.h = function(h.val){
+    groups.probs =
+      apply(vec.cv, 1, function(x)
+        mean(#get guess using the nb_updated function
+          nb_updated(scores[cvgroups!=x,], classes[cvgroups!=x],
+                     c(table(classes[cvgroups!=x])/length(classes[cvgroups!=x])) , #define the new prior probs
+                     scores[cvgroups==x,],
+                     s_mat_hat_train = s_mat_hat_train[cvgroups!=x,],
+                     s_mat_hat_test = s_mat_hat_train[cvgroups==x,],
+                     h = h.val, alpha_js = alpha_js, P_max = P_max) ==  classes[cvgroups==x]))
+    #return the accuracy of the prediction
+    mean(groups.probs)
+  }
+
+  #initialize matrix for apply which contains all of the possible grid values
+  grid.vals.h = seq(min.h, max.h, length.out = n_grid)
+  #apply the previously defined functions to get the CV accuracies at each h value
+  if(!is.na(static_train)[1]){
+    h.accs = sapply(grid.vals.h,
+                    function(x) get.cv.h.static(x))
+  }else{
+    h.accs = sapply(grid.vals.h,
+                    function(x) get.cv.h(x))
+  }
+
+  # assign h value based on the one with the largest CV accuracy
+  h = h.accs[which.max(h.accs)]
+  #h = grid.vals.h[max(which(h.accs==max(h.accs)))]
+
+  # guess = nb_updated(scores = scores, classes = classes,
+  #                    prior_g = c(table(classes)/length(classes)),
+  #                    scores_test =  scores_test,
+  #                    s_mat_hat_train = s_mat_hat_train,
+  #                    s_mat_hat_test = s_mat_hat_test, h=h, alpha_js = alpha_js, P_max = P_max,
+  #                    static_train = static_train, static_test = static_test)
+
+
+
+
+
+
+
+
+
+  #get K
+  nd = dim(scores)[2]
+  #get number of groups
+  ng = length(unique(classes))
+  #initialize list
+  densities = list()
+  #estimate density at each K for each group
+  for(i in 1:ng){
+    densities[[i]]=list()
+    for(k in 1:nd){
+      densities[[i]][[k]] = density(scores[classes==i,k],
+                                    kernel = "gaussian",
+                                    bw = h*sd(scores[classes==i,k]))
+    }
+  }
+
+  # get number of test functions
+  n_test = dim(scores_test)[1]
+  p.mat = matrix(NA, nrow = n_test, ncol = length(prior_g))
+  vec = matrix(1:n_test, ncol = 1)
+
+  #set ps to 3
+  get_ps = rep(P_max, ng)
+
+  models_ls = list()
+  p.mat_s = matrix(NA, nrow = n_test, ncol = length(unique(classes)))
+
+  for(l in 1:ng){
+
+    models_ls[[l]] = fit_ajs_model(l, get_ps[l], s_mat_hat_train, classes = classes, static_train = static_train)
+    p.mat_s[,l]  = sapply(1:n_test, function(x) predict_new_ind_group_model(x, l, get_ps[l],  models_ls, s_mat_hat_test, static_test))
+
+  }
+
+
+  #For each group get the Bayes classifier value of probability of being in that group
+  for(i in 1:ng){
+    #apply for each user get the probability for each component in that group
+    pdf.vals.test.1 = t(apply(vec, 1,
+                              function(x)  get_pdf_den2(densities, scores_test, rep(i, n_test), x)))
+    #apply for each user to get the product of those K probabilities
+    pdf_vals = apply(pdf.vals.test.1, 1, prod)
+    pdf.vals.test.1 = cbind.data.frame(pdf_vals, p.mat_s[,i])
+    pdf_vals = apply(pdf.vals.test.1, 1, prod)
+
+    cur_prod = rep(NA, n_test)
+
+    if(length(cat_covariates_train)>0){
+
+      for(p in 1:(dim(cat_covariates_train)[2])){
+
+        cur.levels = unique(c(unlist(cat_covariates_train[,p]), unlist(cat_covariates_test[,p])))
+        alpha_new = 5
+        cat_covariates_train_cur_group = cat_covariates_train[which(Ys_train==i),]
+        cur_cat = table(factor(unlist(cat_covariates_train_cur_group[,p]), cur.levels)) + alpha_new
+        cur.var = cur_cat / sum(cur_cat)
+
+        if(p==1){
+          cur_prod = unlist(apply(vec, 1, function(x) cur.var[which(unlist(cat_covariates_test[x,p]) == cur.levels)]))
+        }else{
+          cur_prod = cur_prod * unlist(apply(vec, 1, function(x) cur.var[which(unlist(cat_covariates_test[x,p]) == cur.levels)]))
+        }
+
+      }
+      p.mat[,i] = prior_g[i]* pdf_vals * cur_prod #p.mat is now matrix of Bayes probabilities
+    }  else{
+      p.mat[,i] = prior_g[i]* pdf_vals  #p.mat is now matrix of Bayes probabilities
+    }
+    #multiply by prior probability
+
+  }
+
+  #returns matrix of probabilies for each group
+  if(return_prob){
+    return(p.mat/rowSums(p.mat))
+  }
+
+  #group prediction is based on maximum posterior probability
+  guess = apply(p.mat, 1, which.max)
+
+
+  if(return_h){
+    return(h)
+  }
+
+  #return guesses
+  return(guess)
+
+}
 
 
 

@@ -18,12 +18,15 @@
 #' @export
 ###
 
-gsFPCA <- function(X_dat_s, Ys_train, static_covariates = NA, pve = 0.95, k = NA, J = 14){
+gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = -1, num_knots = 10, bs0 = "cr"){
 
   D = dim(X_dat_s)[2]
   N = dim(X_dat_s)[1]
   tt=seq(0,1, len=D)
-
+  k= Kb
+  Ys_train = Ys
+  J = num_knots
+  static_covariates = covariates
 
   if(!is.na(static_covariates)[1]){
     if((N != (dim(static_covariates)[1])) ){
@@ -38,7 +41,7 @@ gsFPCA <- function(X_dat_s, Ys_train, static_covariates = NA, pve = 0.95, k = NA
   #Step 1 of the proposed method
   ##
   vec = matrix(1:(N), ncol = 1)
-  smoothed_x = logit(t(apply(vec, 1, function(x) regression_g(x, X_dat_s, tt, k=J))))
+  smoothed_x = logit(t(apply(vec, 1, function(x) regression_g(x, X_dat_s, tt, k=k, bs0 = bs0))))
 
   ##
   #Step 2 of the proposed method
@@ -121,11 +124,13 @@ gsFPCA <- function(X_dat_s, Ys_train, static_covariates = NA, pve = 0.95, k = NA
 #' @export
 ###
 
-gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = NA){
+gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 
   D = dim(X_dat_s_test)[2]
   N_test = dim(X_dat_s_test)[1]
   tt=seq(0,1, len=D)
+  static_covariates_test = covariates_new
+  X_dat_s_test = X_dat_s_new
 
   if(!is.na(static_covariates_test)[1]){
     if((N_test != (dim(static_covariates_test)[1]))){
@@ -253,8 +258,13 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_test, static_covariates_test = 
 #' @export
 ###
 
-gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pve1 = 0.95,
-                   pve2 = 0.95, k = NA, q =3, approximation = "linear", gar_covariates = NA){
+gMFPCA <- function(X_dat_m, Ys, Js, N, covariates = NA, gAR = F, pve1 = 0.95,
+                   pve2 = 0.95, Kb = 5, q = 3, approximation = "linear", gar_covariates = NA, bs0 = "cr"){
+
+
+  Ys_train = Ys
+  static_covariates = covariates
+  k = Kb
 
   D = dim(X_dat_m)[2]
 
@@ -262,7 +272,7 @@ gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pv
     N = length(Js)
     #set check if Js and N do not match up
   }else{
-    N = dim(X_dat_m)[2]/Js
+    N = dim(X_dat_m)[1]/Js
     Js = rep(Js, N)
   }
 
@@ -287,10 +297,10 @@ gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pv
   #Get the parsimonious distribution
   if(approximation == "linear"){
     cur.train = multilevel_linear_fpca(X_dat_m, J,
-                                              pve1 = pve1, pve2 = pve2)
+                                              pve1 = pve1, pve2 = pve2, k = k, bs0 = bs0)
   }else{
     cur.train = multilevel_exponential_fpca(X_dat_m, J,
-                                             pve1 = pve1, pve2 = pve2)
+                                             pve1 = pve1, pve2 = pve2, k = k, bs0 = bs0)
   }
 
   mu_t_hat = cur.train$mu_hat
@@ -309,8 +319,10 @@ gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pv
   return_vals = list( )
 
   return_vals$scores_train = scores_train
-  return_vals$eigen_funcs = eigen_funcs1
-  return_vals$eigen_vals = eigen_vals1
+  return_vals$eigen_funcs1 = eigen_funcs1
+  return_vals$eigen_vals1 = eigen_vals1
+  return_vals$eigen_funcs2 = eigen_funcs2
+  return_vals$eigen_vals2 = eigen_vals2
   return_vals$static_covariates = static_covariates
   return_vals$classes = Ys_train
   return_vals$mu_t = mu_t_hat
@@ -332,6 +344,7 @@ gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pv
     return_vals$gar_models_ls = gar_models_ls
     return_vals$s_mat_train = s_mat_train
     return_vals$q = q
+    return_vals$gar_covariates = gar_covariates
 
   }
 
@@ -354,8 +367,7 @@ gMFPCA <- function(X_dat_m, Ys_train, Js, N, static_covariates = NA, gAR = F, pv
 #' @export
 ###
 
-gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = NA){
-
+gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_covariates_new = NA){
 
   scores_train = gmFPCA.model$scores_train
   eigen_funcs1 = gmFPCA.model$eigen_funcs1
@@ -367,11 +379,15 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = 
   mu_t_hat = gmFPCA.model$mu_t
   gAR = gmFPCA.model$gAR
   J = gmFPCA.model$J
+  static_covariates_test = covariates_new
+  X_dat_m_test = X_dat_m_new
+  gar_covariates_test = gar_covariates_new
 
   if(gAR){
 
     gar_models_ls = gmFPCA.model$gar_models_ls
     s_mat_train  = gmFPCA.model$s_mat_train
+    gar_covariates = gmFPCA.model$gar_covariates
     q = gmFPCA.model$q
 
   }
@@ -397,12 +413,14 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = 
   }
 
   J_test = J
-  posting_days = 1-(rowSums(Curves_test)==0)
+  posting_days = 1-(rowSums(X_dat_m_test)==0)
   s_mat_test = t(matrix(as.numeric(matrix(posting_days, nrow = J_test)), nrow = J_test))
   Js_s_test = rowSums(s_mat_test)
 
+  #X_dat_s_test = t(matrix(c(t(X_dat_m_test)), ncol = N_test))
+
   #estimate scores testing set
-  scores_test=estimate_scores(Curves_test, s_mat = s_mat_test, I=N_test, J=J_test,
+  scores_test=estimate_scores(X_dat_m_test, s_mat = s_mat_test, I=N_test, J=J_test,
                               eigen_vals1, eigen_vals2,
                               eigen_funcs1, eigen_funcs2, mu_t_hat)
 
@@ -410,7 +428,7 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = 
   prior_g = c(table(Ys_train)/length(Ys_train))
 
 
-  if(!gar){
+  if(!gAR){
     if(is.na(static_covariates)[1]){
       guess = nb_updated_grid_scores_only(scores_train,
                                           Ys_train,
@@ -443,12 +461,16 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = 
   }else{
 
     if(is.na(static_covariates)[1]){
-      guess = nb_updated_grid(scores = scores_train, classes = Ys_train_reduced,
-                              prior_g = c(table(Ys_train_reduced)/length(Ys_train_reduced)),
+      guess = nb_updated_grid(scores = scores_train, classes = Ys_train,
+                              prior_g = c(table(Ys_train)/length(Ys_train)),
                               scores_test =  scores_test,
-                              s_mat_hat_test =  s_mat_hat_test[users_to_keep_test, 1:J_test_max],
-                              s_mat_hat_train =  s_mat_hat_train[users_to_keep_train,])
+                              s_mat_hat_test =  s_mat_test,
+                              s_mat_hat_train =  s_mat_train,
+                              P_max = q,
+                              static_train = gar_covariates,
+                              static_test = gar_covariates_test)
     }else{
+
 
       numeric_cols = which(sapply(static_covariates, is.numeric))
 
@@ -464,19 +486,21 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_test, static_covariates_test = 
       cat_covariates_test  = static_covariates_test[,-numeric_cols]
 
 
-      #need to update for categorical variables
+      #update for categorical variables
 
-      guess = nb_updated_grid_cat_only(scores = scores_train, classes = Ys_train_reduced,
-                              prior_g = c(table(Ys_train_reduced)/length(Ys_train_reduced)),
-                              scores_test =  scores_test,
-                              s_mat_hat_test =  s_mat_hat_test[users_to_keep_test, 1:J_test_max],
-                              s_mat_hat_train =  s_mat_hat_train[users_to_keep_train,])
+      guess = nb_updated_grid_cat(scores = scores_train2, classes = Ys_train,
+                                  cat_covariates_train, cat_covariates_test,
+                              prior_g = c(table(Ys_train)/length(Ys_train)),
+                              scores_test =  scores_test2,
+                              s_mat_hat_test =  s_mat_test,
+                              s_mat_hat_train =  s_mat_train,
+                              P_max = q,
+                              static_train = gar_covariates,
+                              static_test = gar_covariates_test)
+
+        }
 
     }
-
-
-
-  }
 
   return(new_groups = guess)
 
