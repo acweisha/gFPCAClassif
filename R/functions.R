@@ -2782,7 +2782,7 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
 
   c1_names=c()
   for(i in 1:j_lags){
-    c1_names=c(c1_names, paste("Z", i, sep=""))
+    c1_names=c(c1_names, paste("S", i, sep=""))
   }
 
   names(data.s.cur2) = c(names(data.s.cur2)[1:(length(names(data.s.cur2))-j_lags)],
@@ -2835,7 +2835,7 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
     #return(m.bayes$aic)
     return(BIC(m.bayes))
   }
-  return(list(model = m.bayes, initial_probs=initial_probs))
+  return(list(model = m.bayes, initial_probs=initial_probs, initial_combos = initial_combos))
 }
 
 
@@ -2880,7 +2880,7 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
 
   c1_names=c()
   for(j in 1:p){
-    c1_names=c(c1_names, paste("Z", j, sep=""))
+    c1_names=c(c1_names, paste("S", j, sep=""))
   }
 
   names(data.s.cur) = c(names(data.s.cur)[1:(length(names(data.s.cur))-p)],

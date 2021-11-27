@@ -126,11 +126,12 @@ gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = -1, num_knots 
 
 gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 
+  X_dat_s_test = X_dat_s_new
   D = dim(X_dat_s_test)[2]
   N_test = dim(X_dat_s_test)[1]
   tt=seq(0,1, len=D)
   static_covariates_test = covariates_new
-  X_dat_s_test = X_dat_s_new
+
 
   if(!is.na(static_covariates_test)[1]){
     if((N_test != (dim(static_covariates_test)[1]))){
@@ -202,17 +203,28 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
     scores_test2 = cbind(scores_test, cur.mat)
 
     #need to update the categorical data
-
     cat_covariates_train  = static_covariates[,-numeric_cols]
     cat_covariates_test  = static_covariates_test[,-numeric_cols]
 
+    if(dim(cat_covariates_train)[2]==0){
+      cat_covariates_train  = NA
+      cat_covariates_test  = NA
+      #need to update for categorical variables
+      guess = nb_updated_grid_scores_only(scores_train2,
+                                              Ys_train,
+                                              prior_g, scores_test2,
+                                              min.h = 0.3, max.h = 1.5)
 
-    #need to update for categorical variables
+    }else{
+      #need to update for categorical variables
+      guess = nb_updated_grid_scores_cat_only(scores_train2, cat_covariates_train,
+                                              Ys_train,
+                                              prior_g, scores_test2, cat_covariates_test,
+                                              min.h = 0.3, max.h = 1.5)
+    }
 
-    guess = nb_updated_grid_scores_cat_only(scores_train2, cat_covariates_train,
-                                        Ys_train,
-                                        prior_g, scores_test2, cat_covariates_test,
-                                        min.h = 0.3, max.h = 1.5)
+
+
 
   }
 
@@ -258,13 +270,16 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 #' @export
 ###
 
-gMFPCA <- function(X_dat_m, Ys, Js, N, covariates = NA, gAR = F, pve1 = 0.95,
+gMFPCA <- function(X_dat_m, Ys, J, N, covariates = NA, gAR = F, pve1 = 0.95,
                    pve2 = 0.95, Kb = 5, q = 3, approximation = "linear", gar_covariates = NA, bs0 = "cr"){
 
+
+  #X_dat_m = t(matrix(t(X_dat_train), ncol = N*J))
 
   Ys_train = Ys
   static_covariates = covariates
   k = Kb
+  Js = J
 
   D = dim(X_dat_m)[2]
 
@@ -383,6 +398,12 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_c
   X_dat_m_test = X_dat_m_new
   gar_covariates_test = gar_covariates_new
 
+  D = dim(X_dat_m_new)[2]
+  #N_test = dim(X_dat_new)[1]
+  #X_dat_m_test = t(matrix(t(X_dat_new), nrow = N*J))
+
+  X_dat_m_test = X_dat_m_new
+
   if(gAR){
 
     gar_models_ls = gmFPCA.model$gar_models_ls
@@ -486,17 +507,38 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_c
       cat_covariates_test  = static_covariates_test[,-numeric_cols]
 
 
+
+      if(dim(cat_covariates_train)[2]==0){
+        cat_covariates_train  = NA
+        cat_covariates_test  = NA
+        #need to update for categorical variables
+        guess = nb_updated_grid(scores = scores_train2, classes = Ys_train,
+                                prior_g = c(table(Ys_train)/length(Ys_train)),
+                                scores_test =  scores_test2,
+                                s_mat_hat_test =  s_mat_test,
+                                s_mat_hat_train =  s_mat_train,
+                                P_max = q,
+                                static_train = gar_covariates,
+                                static_test = gar_covariates_test)
+
+      }else{
+        #need to update for categorical variables
+        guess = nb_updated_grid_cat(scores = scores_train2, classes = Ys_train,
+                                    cat_covariates_train, cat_covariates_test,
+                                    prior_g = c(table(Ys_train)/length(Ys_train)),
+                                    scores_test =  scores_test2,
+                                    s_mat_hat_test =  s_mat_test,
+                                    s_mat_hat_train =  s_mat_train,
+                                    P_max = q,
+                                    static_train = gar_covariates,
+                                    static_test = gar_covariates_test)
+      }
+
+
+
       #update for categorical variables
 
-      guess = nb_updated_grid_cat(scores = scores_train2, classes = Ys_train,
-                                  cat_covariates_train, cat_covariates_test,
-                              prior_g = c(table(Ys_train)/length(Ys_train)),
-                              scores_test =  scores_test2,
-                              s_mat_hat_test =  s_mat_test,
-                              s_mat_hat_train =  s_mat_train,
-                              P_max = q,
-                              static_train = gar_covariates,
-                              static_test = gar_covariates_test)
+
 
         }
 
