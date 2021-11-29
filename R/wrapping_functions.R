@@ -2,7 +2,7 @@
 #
 #Wrapping Functions for the gFPCAClassif package
 #Author: Anthony Weishampel
-#Date Updated: 10/12/2021
+#Date Updated: 11/29/2021
 #
 ######
 
@@ -10,15 +10,18 @@
 
 ###
 # wrapping function for single level fpca
-#' @curves N x m matrix of binary data
-#' @Ys_train N long vector of responses
-#' @static_covariates N x Q dataframe of covariates
+#' @X_dat_s N x m matrix of binary data
+#' @Ys N long vector of groups
+#' @covariates N x Q data frame of covariates
 #' @pve Proportion of variation explained
+#' @Kb number of basis functions used when estimating latent trajectories
+#' @bs0 type of basis functions used when estimating latent trajectories
+#' @num_knots number of knots in basis functions
 #' @return list of information required to build the model and predict new groups
 #' @export
 ###
 
-gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = -1, num_knots = 10, bs0 = "cr"){
+gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = 10, num_knots = 10, bs0 = "cr"){
 
   D = dim(X_dat_s)[2]
   N = dim(X_dat_s)[1]
@@ -117,11 +120,10 @@ gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = -1, num_knots 
 
 ###
 # wrapping function for single level fpca
-#' @curves N x m matrix of binary data
-#' @static_covariates N x Q dataframe of covariates
-#' @pve Proportion of varation explained
-#' @return A matrix of the infile
-#' @export
+#' @gsFPCA.model trained gsFPCA model
+#' @X_dat_s_new N_new x m matrix of binary data
+#' @covariates_new N_new x Q data frame of covariates
+#' @return Predicted new groups for the N_new users
 ###
 
 gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
@@ -246,28 +248,22 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 
 
 
-
-
-
-
-
-
-
-
-
-
 ###
-# wrapping function for Multilevel level fpca
-#' @curves N*J x m matrix of binary data
-#' @Ys_train N long vector of responses
-#' @static_covariates N x Q Dataframe of covariates
+# wrapping function for gmFPCA
+#' @X_dat_m N*J x m matrix of binary data
+#' @Ys N long vector of responses
+#' @J Number of realizations per individuals
+#' @N number of individuals
+#' @gAR variable to include generalized autoregressive structure
+#' @covariates N x Q Data frame of covariates
 #' @pve1 Proportion of variation explained in the first level eigenfunction
 #' @pve2 Proportion of variation explained in the first level eigenfunction
-#' @MC Markov Chain
-#' @static_covariates Dynamic_covariates
-#' @q Lag in the generalized Autoregressive model
-#' @return list of information required to build the model and predict new groups
-#' @export
+#' @kb number of basis functions in smoothing covariance functions
+#' @bs0 type of basis functions when smoothing covariance functions
+#' @approximation choice of which approximation to use
+#' @gar_covariates covariates to include in the gAR model
+#' @q Lag in the generalized Auto regressive model
+#' @return list of information required to build the gmFPCA model and predict new groups
 ###
 
 gMFPCA <- function(X_dat_m, Ys, J, N, covariates = NA, gAR = F, pve1 = 0.95,
@@ -374,12 +370,12 @@ gMFPCA <- function(X_dat_m, Ys, J, N, covariates = NA, gAR = F, pve1 = 0.95,
 
 
 ###
-# wrapping function for single level fpca
-#' @curves N x m matrix of binary data
-#' @static_covariates N x Q dataframe of covariates
-#' @pve Proportion of varation explained
-#' @return A matrix of the infile
-#' @export
+# wrapping function for predicting the groups for new gmFPCA Classifier
+#' @X_dat_m_new N_new x m matrix of binary data
+#' @gmFPCA.model Trained gmFPCA
+#' @covariates_new N_new x Q data frame of covariates
+#' @gar_covariates_new N_new X Q_g data frame of covariates for gAR model
+#' @return predicted group values for the N_new users
 ###
 
 gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_covariates_new = NA){

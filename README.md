@@ -124,3 +124,113 @@ Adding the number of followers for each account actually decreased the
 performance of the classifier as the updated classifier accurately
 labeled 82% of the new accounts. Similar results are observed when
 including the number of friends into the models.
+
+As explained in Section , Both the and the models are implemented using
+the function. To apply the multi-level structure to the social media
+data, the provided binary data need to be restructured. In the previous
+approach, the binary data for an account was treated as a single series
+of observations from the two week interval. In the multi-level approach,
+the data consists multiple series per individual. In the social media
+application we consider each day is a separate series. Due to the nature
+of the social media data, there are days, when the account does not post
+at any point during day. Because there can be inactive days the is more
+appropriate to model the data.
+
+Recall, the binary data are formatted based on 30 minute intervals
+therefore there are 48 observations per day, *m* = 48. Therefore to
+format the binary-valued matrix as described in Section , we need to
+have each row correspond to a given individual on a given day. The
+formatted binary data of the training and testing set accounts for the
+multi-level models are provided in the and matrices. The formatted data
+is used to fit the by:
+
+``` r
+gmfpca.cur = gMFPCA(X_dat = X_dat_m_train,
+                    Ys = acc_data_train$group, J = 14, N=400, 
+                    covariates = NA, gAR = T, q = 3, pve1 = 0.95,
+                    pve2 = 0.75,  approximation = "linear")
+```
+
+Based on the data, the probability of an account posting within the 30
+minutes interval is large enough such that the linear approximation
+method is recommended. If this probability is small and posts are rare,
+then the exponential approximation is more appropriate. The trained
+model contains the mean function, both sets of eigenfunctions, scores,
+and the trained models for each group. The individual level
+eigenfunctions (Figure ) can be displayed using the following code. The
+individual level eigenfuntions explain how the posting patterns within a
+day differs among accounts.
+
+``` r
+matplot(gmfpca.cur$eigen_funcs1, type="l", lwd = 3, lty = 1,
+        xlab = "Time", main = "gsFPCA Eigenfunctions", xaxt="n")
+axis(1, at = (0:4)*12, labels = c("12am", "6am", "12pm",
+        "6pm", "12am"))
+legend("bottomright", 
+        legend=c(1:length(gmfpca.cur$eigen_vals1)),
+        col=1:length(gmfpca.cur$eigen_vals1), lty=1, lwd=2)
+```
+
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+
+Because there are two groups in the provided data, there are two fitted
+models in the object, one model for each group. The lag in the both of
+these models is to be *q* = 3. The fitted model for the genuine accounts
+can be retrieved and viewed by
+
+``` r
+ gmfpca.cur$gar_models_ls[[2]]
+#> $model
+#> 
+#> Call:  bayesglm(formula = formula.cur, family = binomial, data = data.s.cur2, 
+#>     prior.df = Inf, scaled = FALSE)
+#> 
+#> Coefficients:
+#> (Intercept)           S1           S2           S3  
+#>     -0.9244       2.8785       2.2737       0.4148  
+#> 
+#> Degrees of Freedom: 2199 Total (i.e. Null);  2196 Residual
+#> Null Deviance:       367.5 
+#> Residual Deviance: 279.2     AIC: 287.2
+#> 
+#> $initial_probs
+#> [1] 0.005415162 0.001805054 0.001353791 0.010379061 0.002707581 0.009927798
+#> [7] 0.012184116 0.956227437
+#> 
+#> $initial_combos
+#>      Var1 Var2 Var3
+#> [1,]    0    0    0
+#> [2,]    1    0    0
+#> [3,]    0    1    0
+#> [4,]    1    1    0
+#> [5,]    0    0    1
+#> [6,]    1    0    1
+#> [7,]    0    1    1
+#> [8,]    1    1    1
+```
+
+The model consists of two components: the autoregressive model estimates
+and the initial probabilities. The initial probabilities are the
+probabilities which define the estimated probability mass function for
+the possible combinations of the first *q* initial states. From the
+fitted it is clear that the automated account’s active state is highly
+affected by the active status of the previous two days.
+
+The function is used to predict the groups given the binary-valued
+functional data for new accounts.
+
+``` r
+gmFPCA.results = gmFPCA_predict(gmfpca.cur, 
+                                X_dat_m_new = X_dat_m_test)
+
+table(gmFPCA.results, acc_data_test$group)
+#>               
+#> gmFPCA.results  1  2
+#>              1 50  1
+#>              2  0 49
+```
+
+The trained classifier is able to accurately discriminate 99% of the
+accounts in the testing set. This accuracy is larger than the gsFPCA
+approach, suggesting that group differences occur in the within day
+posting patterns.

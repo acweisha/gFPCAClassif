@@ -2721,6 +2721,8 @@ get_true_alpha = function(scenario = 1, J){
 
 }
 
+
+#function used to train the gAR models
 fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=NA){
 
   N = dim(s_mat_train)[1]
@@ -2840,6 +2842,7 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
 
 
 
+
 predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_test = NA){
 
   N_test = dim(s_mat_test)[1]
@@ -2917,6 +2920,7 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
 #Inputs:
 # scores: N x K matrix of 1st level scores in the training set
 # classes: Group labels vector of length N
+# cat: N x Qc dataframe of categroical variables
 # prior_g: vector of prior probability of being in each group, sums up to 1
 # scores_test: N_test x K matrix of scores in the testing set
 # min.h: min possible value for the multiplier
@@ -3068,6 +3072,8 @@ nb_updated_grid_scores_cat_only = function(scores, cat_covariates_train, classes
 # max.h: maximum possible value for the multiplier
 # n_grid: number of vlaues between min.h and max.h to search over
 # CV: Number of folds for cross validation
+# cat_covariates_train: N x Qc data frame of categorical variables
+# cat_covariates_test: N_new x Qc data frame of categorical variables
 # return_h: T/F to return the value of the multiplier
 # return_prob: T/F to return group Bayes classifier probability for each individual in testing set
 #
