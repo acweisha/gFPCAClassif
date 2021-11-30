@@ -27,7 +27,7 @@ To model the binary data, we fit the model without covariates, the
 number of eigenfucntions are determined by a PVE of 0.95,
 
 ``` r
- gsFPCA.model = gsFPCA(X_dat_s = X_dat_train,
+gsFPCA.model = gsFPCA(X_dat_s = X_dat_train,
                 Ys = acc_data_train$group, covariates = NA,
                 pve = 0.95, Kb = 10, bs0="cr")
 ```
@@ -116,8 +116,8 @@ gsFPCA.results = gsFPCA_predict(gsFPCA.model.ff,
 table(gsFPCA.results, acc_data_test$group)
 #>               
 #> gsFPCA.results  1  2
-#>              1 46 18
-#>              2  4 32
+#>              1 50 25
+#>              2  0 25
 ```
 
 Adding the number of followers for each account actually decreased the

@@ -7,8 +7,8 @@ Maintainer: The package maintainer <acweisha@ncsu.edu>
 Depends: Matrix, splines, fda, gamm4, arm, refund, gamm4, kernlab
 Description: This package presents methods for classifying binary data through incorporating functional data analysis principals. 
     Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: dplyr,
-    Matrix, readr, splines, fda, gamm4, arm, refund, gamm4, kernlab
+Imports: dplyr, Matrix, readr, splines, fda, gamm4, arm, refund, gamm4, kernlab
+RoxygenNote: 7.1.2

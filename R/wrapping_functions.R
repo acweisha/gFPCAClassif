@@ -8,19 +8,16 @@
 
 
 
-###
-# wrapping function for single level fpca
-#' @X_dat_s N x m matrix of binary data
-#' @Ys N long vector of groups
-#' @covariates N x Q data frame of covariates
-#' @pve Proportion of variation explained
-#' @Kb number of basis functions used when estimating latent trajectories
-#' @bs0 type of basis functions used when estimating latent trajectories
-#' @num_knots number of knots in basis functions
+#' Function for modeling single-level fpca
+#' @name gsFPCA
+#' @param X_dat_s N x m matrix of binary data
+#' @param Ys N long vector of groups
+#' @param covariates N x Q data frame of covariates
+#' @param pve Proportion of variation explained
+#' @param Kb number of basis functions used when estimating latent trajectories
+#' @param bs0 type of basis functions used when estimating latent trajectories
+#' @param num_knots number of knots in basis functions
 #' @return list of information required to build the model and predict new groups
-#' @export
-###
-
 gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = 10, num_knots = 10, bs0 = "cr"){
 
   D = dim(X_dat_s)[2]
@@ -118,14 +115,12 @@ gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = 10, num_knots 
 
 
 
-###
-# wrapping function for single level fpca
-#' @gsFPCA.model trained gsFPCA model
-#' @X_dat_s_new N_new x m matrix of binary data
-#' @covariates_new N_new x Q data frame of covariates
+#' Function for predicting new groups of based on single realizaitons of binary-valued functional data
+#' @name gsFPCA_predict
+#' @param gsFPCA.model trained gsFPCA model
+#' @param X_dat_s_new N_new x m matrix of binary data
+#' @param covariates_new N_new x Q data frame of covariates
 #' @return Predicted new groups for the N_new users
-###
-
 gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 
   X_dat_s_test = X_dat_s_new
@@ -244,28 +239,22 @@ gsFPCA_predict <- function(gsFPCA.model, X_dat_s_new, covariates_new = NA){
 
 
 
-
-
-
-
-###
-# wrapping function for gmFPCA
-#' @X_dat_m N*J x m matrix of binary data
-#' @Ys N long vector of responses
-#' @J Number of realizations per individuals
-#' @N number of individuals
-#' @gAR variable to include generalized autoregressive structure
-#' @covariates N x Q Data frame of covariates
-#' @pve1 Proportion of variation explained in the first level eigenfunction
-#' @pve2 Proportion of variation explained in the first level eigenfunction
-#' @kb number of basis functions in smoothing covariance functions
-#' @bs0 type of basis functions when smoothing covariance functions
-#' @approximation choice of which approximation to use
-#' @gar_covariates covariates to include in the gAR model
-#' @q Lag in the generalized Auto regressive model
+#'  Function for fitting the gmFPCA
+#' @name gMFPCA
+#' @param X_dat_m N*J x m matrix of binary data
+#' @param Ys N long vector of responses
+#' @param J Number of realizations per individuals
+#' @param N number of individuals
+#' @param gAR variable to include generalized autoregressive structure
+#' @param covariates N x Q Data frame of covariates
+#' @param pve1 Proportion of variation explained in the first level eigenfunction
+#' @param pve2 Proportion of variation explained in the first level eigenfunction
+#' @param Kb number of basis functions in smoothing covariance functions
+#' @param bs0 type of basis functions when smoothing covariance functions
+#' @param approximation choice of which approximation to use
+#' @param gar_covariates covariates to include in the gAR model
+#' @param q Lag in the generalized Auto regressive model
 #' @return list of information required to build the gmFPCA model and predict new groups
-###
-
 gMFPCA <- function(X_dat_m, Ys, J, N, covariates = NA, gAR = F, pve1 = 0.95,
                    pve2 = 0.95, Kb = 5, q = 3, approximation = "linear", gar_covariates = NA, bs0 = "cr"){
 
@@ -369,15 +358,14 @@ gMFPCA <- function(X_dat_m, Ys, J, N, covariates = NA, gAR = F, pve1 = 0.95,
 
 
 
-###
-# wrapping function for predicting the groups for new gmFPCA Classifier
-#' @X_dat_m_new N_new x m matrix of binary data
-#' @gmFPCA.model Trained gmFPCA
-#' @covariates_new N_new x Q data frame of covariates
-#' @gar_covariates_new N_new X Q_g data frame of covariates for gAR model
-#' @return predicted group values for the N_new users
-###
 
+#' Function for predicting the groups for new gmFPCA Classifier
+#' @name gmFPCA_predict
+#' @param X_dat_m_new N_new x m matrix of binary data
+#' @param gmFPCA.model Trained gmFPCA
+#' @param covariates_new N_new x Q data frame of covariates
+#' @param gar_covariates_new N_new X Q_g data frame of covariates for gAR model
+#' @return predicted group values for the N_new users
 gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_covariates_new = NA){
 
   scores_train = gmFPCA.model$scores_train
@@ -548,3 +536,54 @@ gmFPCA_predict <- function(gmFPCA.model, X_dat_m_new, covariates_new = NA, gar_c
 
 
 
+
+
+#' The binary-valued functional data summarizing 2-weeks of posting data for the 400 accounts in the training set
+#'
+#' @name X_dat_train
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords Binary-Valued Functional Data
+NULL
+
+
+#' The binary-valued functional data summarizing 2-weeks of posting data for the 100 accounts in the testing set
+#'
+#' @name X_dat_test
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords Binary-Valued Functional Data
+NULL
+
+
+#' The multilevel binary-valued functional data summarizing 2-weeks of posting data for the 400 accounts in the training set
+#'
+#' @name X_dat_m_train
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords Binary-Valued Functional Data
+NULL
+
+#' The multilevel binary-valued functional data summarizing 2-weeks of posting data for the 100 accounts in the testing set
+#'
+#' @name X_dat_m_test
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords Binary-Valued Functional Data
+NULL
+
+#'  Data about the 400 accounts in the training set
+#' @description For each individual (id), we have the group of the account (group) bot (group = 2) and genuine (group = 1). Additionally for each individual, we have the number of accounts which the individual follows (friends\_count), the number of accounts which follow the individual (followers\_count), and the date when the account was created (created\_at).
+#' @name acc_data_train
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords  Functional Data
+NULL
+
+#'  Data about the 100 accounts in the testing set
+#' @description For each individual (id), we have the group of the account (group) bot (group = 2) and genuine (group = 1). Additionally for each individual, we have the number of accounts which the individual follows (friends\_count), the number of accounts which follow the individual (followers\_count), and the date when the account was created (created\_at).
+#' @name acc_data_test
+#' @docType data
+#' @author Anthony Weishampel \email{acweisha@@ncsu.edu}
+#' @keywords  Functional Data
+NULL

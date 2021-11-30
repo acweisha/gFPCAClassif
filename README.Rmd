@@ -37,7 +37,7 @@ To model the binary data, we fit the \emph{gsFPCA} model without covariates, the
 
 
 ```{r, eval=T}
- gsFPCA.model = gsFPCA(X_dat_s = X_dat_train,
+gsFPCA.model = gsFPCA(X_dat_s = X_dat_train,
                 Ys = acc_data_train$group, covariates = NA,
                 pve = 0.95, Kb = 10, bs0="cr")
 ```
