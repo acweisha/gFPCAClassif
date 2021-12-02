@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{estimate_eigenfunctions}
 \alias{estimate_eigenfunctions}
-\title{Function to estimate eiginfunctions}
+\title{Function to estimate eigenfunctions}
 \usage{
 estimate_eigenfunctions(K_b, pve = 0.98, fix_num_of_functions = NA)
 }
@@ -17,5 +17,5 @@ estimate_eigenfunctions(K_b, pve = 0.98, fix_num_of_functions = NA)
 The eigenvalues and eigenvectors from
 }
 \description{
-Function to estimate eiginfunctions
+Function to estimate eigenfunctions
 }

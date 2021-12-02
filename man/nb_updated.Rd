@@ -31,7 +31,7 @@ nb_updated(
 
 \item{s_mat_hat_test}{matrix of estimated S latent state values testing set}
 
-\item{alpha_js}{Estimated probability oflatent states across the realizations}
+\item{alpha_js}{Estimated probability of latent states across the realizations}
 
 \item{h}{multiplier for kernel based density function}
 
@@ -42,7 +42,7 @@ nb_updated(
 \item{static_test}{Covariates for the classifier in the testing set accounts}
 }
 \value{
-Predicted groups for the indivdiuals
+Predicted groups for the individuals
 }
 \description{
 Function: Estimate predicted values for a given value of scaling parameter h

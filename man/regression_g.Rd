@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{regression_g}
 \alias{regression_g}
-\title{Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMMM using a set of known basis functions}
+\title{Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMM using a set of known basis functions}
 \usage{
 regression_g(z, Curves, tt, k = 10, method = "REML", bs0 = "cr")
 }
@@ -23,5 +23,5 @@ regression_g(z, Curves, tt, k = 10, method = "REML", bs0 = "cr")
 Fitted values from the game function for subject z
 }
 \description{
-Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMMM using a set of known basis functions
+Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMM using a set of known basis functions
 }

@@ -22,9 +22,9 @@ estimate_eigenfunctions2(
 
 \item{pve2}{: Proportion of variance explained for the second component}
 
-\item{fix_num_of_functions1}{if you dont want to used PVE you can fix the number of eigenfunctions to output}
+\item{fix_num_of_functions1}{if you do not want to used PVE you can fix the number of eigenfunctions to output}
 
-\item{fix_num_of_functions2}{if you dont want to used PVE you can fix the number of eigenfunctions to output}
+\item{fix_num_of_functions2}{if you do not want to used PVE you can fix the number of eigenfunctions to output}
 }
 \value{
 Eigenfunctions and eigenvalues for both types of covariance functions

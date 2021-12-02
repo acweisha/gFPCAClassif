@@ -7,10 +7,10 @@
 make_pos_semi_def(x)
 }
 \arguments{
-\item{x}{matrix to make semi-postive definite}
+\item{x}{matrix to make semi-positive definite}
 }
 \value{
-semi-postive definite of x
+semi-positive definite of x
 }
 \description{
 Function that makes a matrix positive semi definite

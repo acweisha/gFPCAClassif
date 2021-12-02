@@ -42,7 +42,7 @@ nb_updated_grid_cat(
 
 \item{s_mat_hat_test}{Matrix of estimated S data for testing}
 
-\item{alpha_js}{Estimated probability oflatent states across the realizations}
+\item{alpha_js}{Estimated probability of latent states across the realizations}
 
 \item{min.h}{min possible value for the multiplier}
 
@@ -50,7 +50,7 @@ nb_updated_grid_cat(
 
 \item{CV}{Number of folds for cross validation}
 
-\item{n_grid}{number of vlaues between min.h and max.h to search over}
+\item{n_grid}{number of values between min.h and max.h to search over}
 
 \item{return_h}{T/F to return the value of the multiplier}
 

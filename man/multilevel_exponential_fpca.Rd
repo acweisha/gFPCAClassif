@@ -23,7 +23,7 @@ multilevel_exponential_fpca(
 
 \item{pve2}{Proportion of variance explained for the second component}
 
-\item{fix_number_of_functions}{if you dont want to used PVE you can fix the number of eigenfunctions to output}
+\item{fix_number_of_functions}{if you do not want to used PVE you can fix the number of eigenfunctions to output}
 
 \item{k}{number of basis functions in the}
 

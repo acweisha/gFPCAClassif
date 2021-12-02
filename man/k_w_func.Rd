@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{k_w_func}
 \alias{k_w_func}
-\title{Function used to esitmate the covariance fucntions in the multilevel scenario}
+\title{Function used to estimate the covariance functions in the multilevel scenario}
 \usage{
 k_w_func(i.cur, X_dat, N)
 }
@@ -17,5 +17,5 @@ k_w_func(i.cur, X_dat, N)
 estimate averaged over j
 }
 \description{
-Function used to esitmate the covariance fucntions in the multilevel scenario
+Function used to estimate the covariance functions in the multilevel scenario
 }

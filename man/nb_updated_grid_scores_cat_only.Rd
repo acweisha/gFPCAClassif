@@ -38,7 +38,7 @@ nb_updated_grid_scores_cat_only(
 
 \item{CV}{Number of folds for cross validation}
 
-\item{n_grid}{number of vlaues between min.h and max.h to search over}
+\item{n_grid}{number of values between min.h and max.h to search over}
 
 \item{return_h}{T/F to return the value of the multiplier}
 

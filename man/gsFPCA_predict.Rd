@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrapping_functions.R
 \name{gsFPCA_predict}
 \alias{gsFPCA_predict}
-\title{Function for predicting new groups of based on single realizaitons of binary-valued functional data}
+\title{Function for predicting new groups of based on single realizations of binary-valued functional data}
 \usage{
 gsFPCA_predict(gsFPCA.model, X_dat_s_new, covariates_new = NA)
 }
@@ -17,5 +17,5 @@ gsFPCA_predict(gsFPCA.model, X_dat_s_new, covariates_new = NA)
 Predicted new groups for the N_new users
 }
 \description{
-Function for predicting new groups of based on single realizaitons of binary-valued functional data
+Function for predicting new groups of based on single realizations of binary-valued functional data
 }

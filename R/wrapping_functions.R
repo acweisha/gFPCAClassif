@@ -115,7 +115,7 @@ gsFPCA <- function(X_dat_s, Ys, covariates = NA, pve = 0.95, Kb = 10, num_knots 
 
 
 
-#' Function for predicting new groups of based on single realizaitons of binary-valued functional data
+#' Function for predicting new groups of based on single realizations of binary-valued functional data
 #' @name gsFPCA_predict
 #' @param gsFPCA.model trained gsFPCA model
 #' @param X_dat_s_new N_new x m matrix of binary data

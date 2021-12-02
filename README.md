@@ -24,7 +24,7 @@ package is currently available on GitHub at
 This is a basic example which shows you how to solve a common problem:
 
 To model the binary data, we fit the model without covariates, the
-number of eigenfucntions are determined by a PVE of 0.95,
+number of eigenfunctions are determined by a PVE of 0.95,
 
 ``` r
 gsFPCA.model = gsFPCA(X_dat_s = X_dat_train,
@@ -49,7 +49,7 @@ head(gsFPCA.model$scores_train)
 #> [6,]  0.34669469 -0.18249006  0.05152066
 ```
 
-By providing the eigenfuntions and scores, researchers are able to
+By providing the eigenfunctions and scores, researchers are able to
 interpret the values of the principal component scores and better
 understand the accounts’ posting patterns. The eigenfunctions are
 visualized by using the function:
@@ -116,8 +116,8 @@ gsFPCA.results = gsFPCA_predict(gsFPCA.model.ff,
 table(gsFPCA.results, acc_data_test$group)
 #>               
 #> gsFPCA.results  1  2
-#>              1 50 25
-#>              2  0 25
+#>              1 46 18
+#>              2  4 32
 ```
 
 Adding the number of followers for each account actually decreased the
@@ -158,8 +158,8 @@ then the exponential approximation is more appropriate. The trained
 model contains the mean function, both sets of eigenfunctions, scores,
 and the trained models for each group. The individual level
 eigenfunctions (Figure ) can be displayed using the following code. The
-individual level eigenfuntions explain how the posting patterns within a
-day differs among accounts.
+individual level eigenfunctions explain how the posting patterns within
+a day differs among accounts.
 
 ``` r
 matplot(gmfpca.cur$eigen_funcs1, type="l", lwd = 3, lty = 1,

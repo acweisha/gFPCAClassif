@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{estimate_scores}
 \alias{estimate_scores}
-\title{Solve the GLMMM based on the Estimates of the scores for the multilevel scenario}
+\title{Solve the GLMM based on the Estimates of the scores for the multilevel scenario}
 \usage{
 estimate_scores(
   data_formatted,
@@ -39,5 +39,5 @@ estimate_scores(
 First Level Scores for every individual
 }
 \description{
-Solve the GLMMM based on the Estimates of the scores for the multilevel scenario
+Solve the GLMM based on the Estimates of the scores for the multilevel scenario
 }

@@ -2,12 +2,12 @@
 % Please edit documentation in R/functions.R
 \name{predict_new_ind_group_model}
 \alias{predict_new_ind_group_model}
-\title{function used to predict the group for new idivdiuals based on the latent states and the fitted gAR models}
+\title{function used to predict the group for new individuals based on the latent states and the fitted gAR models}
 \usage{
 predict_new_ind_group_model(i, l, p, models_ls, s_mat_test, static_test = NA)
 }
 \arguments{
-\item{i}{index of the current indivdual}
+\item{i}{index of the current individual}
 
 \item{l}{the group which is currently being used}
 
@@ -23,5 +23,5 @@ predict_new_ind_group_model(i, l, p, models_ls, s_mat_test, static_test = NA)
 Predicted probability of being in group l for the new individuals
 }
 \description{
-function used to predict the group for new idivdiuals based on the latent states and the fitted gAR models
+function used to predict the group for new individuals based on the latent states and the fitted gAR models
 }

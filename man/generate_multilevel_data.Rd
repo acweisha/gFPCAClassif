@@ -33,7 +33,7 @@ generate_multilevel_data(
 
 \item{Ys}{Groups of the individuals}
 
-\item{return_scores_too}{T/F values to determine whether to return score coefficeints too}
+\item{return_scores_too}{T/F values to determine whether to return score coefficients too}
 }
 \value{
 : Binary or latent curves

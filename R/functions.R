@@ -1,12 +1,14 @@
 #####
 #
-#Cor efunctions Functions for the gFPCAClassif package
+#Core functions Functions for the gFPCAClassif package
 #Author: Anthony Weishampel
 #Date Updated: 10/12/2021
 #
 ######
 
 
+#' @import methods
+NULL
 
 ############
 # Functions for analyses
@@ -23,7 +25,7 @@
 #' @param sigma variance in the latent curves
 #' @param binary Reports whether to return binary or latent curves
 #' @param Ys Groups of the individuals
-#' @param return_scores_too T/F values to determine whether to return score coefficeints too
+#' @param return_scores_too T/F values to determine whether to return score coefficients too
 #' @return: Binary or latent curves
 generate_multilevel_data <- function(scenario = 1 , grid=seq(from = 0,to = 1, length.out = 48),
                                      N, p = rep(0.5, 2), J = 7,
@@ -529,8 +531,8 @@ generate_data_with_S = function(scenario = 3, Curves_binary, N, J, Ys, alpha1 = 
 
 
 #' Function that makes a matrix positive semi definite
-#' @param x matrix to make semi-postive definite
-#' @return  semi-postive definite of x
+#' @param x matrix to make semi-positive definite
+#' @return  semi-positive definite of x
 make_pos_semi_def = function(x){
   x2 = svd(x)
   #remove negative vals
@@ -541,7 +543,7 @@ make_pos_semi_def = function(x){
 }
 
 
-#' Function: Get number of functions based on the pvs and eigenvalues
+#' Function: Get number of functions based on the pve and eigenvalues
 #' @param pve Value [0,1] to determine number of eigenfunctions
 #' @param vec vector of eigenvalues
 #' @param set_max_number If you want a maximum number of values
@@ -565,7 +567,7 @@ get_length_pve = function(pve, vec, set_max_number = NA){
 
 
 
-#' Function to estimate eiginfunctions
+#' Function to estimate eigenfunctions
 #' @param K_b estimate of a covariance matrix
 #' @param pve Proportion of variance explained
 #' @param fix_num_of_functions set the number of eigenfunctions to be returned
@@ -702,7 +704,7 @@ get_pdf_den2 = function(densities, scores, classes, i){
       lower0 = xnew
       upper0 = xnew+delta0
     }
-    #if new vlaue is outside of defined range
+    #if new value is outside of defined range
     if(upper0>=max(dens_cur_k$x)){
       xnew=max(dens_cur_k$x)
       lower0 = xnew - delta0
@@ -726,8 +728,8 @@ get_pdf_den2 = function(densities, scores, classes, i){
 #' @param P_max Lag in the gAR models
 #' @param static_train Covariates for the classifier in the training set accounts
 #' @param static_test Covariates for the classifier in the testing set accounts
-#' @param alpha_js Estimated probability oflatent states across the realizations
-#' @return Predicted groups for the indivdiuals
+#' @param alpha_js Estimated probability of latent states across the realizations
+#' @return Predicted groups for the individuals
 nb_updated = function(scores, classes, prior_g, scores_test,
                       s_mat_hat_train, s_mat_hat_test, alpha_js=NA,  h = 1.06, P_max = 3,
                       static_train = NA, static_test = NA){
@@ -818,7 +820,7 @@ nb_updated = function(scores, classes, prior_g, scores_test,
 #' @param return_prob T/F to return group Bayes classifier probability for each individual in testing set
 #' @param static_train Covariates for the classifier in the training set accounts
 #' @param static_test Covariates for the classifier in the testing set accounts
-#' @param alpha_js Estimated probability oflatent states across the realizations
+#' @param alpha_js Estimated probability of latent states across the realizations
 #' @param s_mat_hat_train Latent state matrix of estimated values for the training set accounts
 #' @param s_mat_hat_test Latent state matrix of estimated values for the testing set accounts
 #' @param P_max Lag of the gAR models
@@ -914,7 +916,7 @@ nb_updated_grid = function(scores, s_mat_hat_train, classes,
 
 
 
-#' Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMMM using a set of known basis functions
+#' Generalized additive model function gam() fits the observed binary-valued functional data by fitting a GLMM using a set of known basis functions
 #' @param z index z = 1,...,N
 #' @param Curves N x D matrix of observed binary series
 #' @param tt grid of timepoints going from 0 to 1 with D observations
@@ -935,8 +937,8 @@ regression_g = function(z, Curves, tt, k=10, method="REML", bs0 ="cr"){
 #' @param K_w : Covariance matrix for the second level component
 #' @param pve1 : Proportion of variance explained for the first component
 #' @param pve2 : Proportion of variance explained for the second component
-#' @param fix_num_of_functions1 if you dont want to used PVE you can fix the number of eigenfunctions to output
-#' @param fix_num_of_functions2 if you dont want to used PVE you can fix the number of eigenfunctions to output
+#' @param fix_num_of_functions1 if you do not want to used PVE you can fix the number of eigenfunctions to output
+#' @param fix_num_of_functions2 if you do not want to used PVE you can fix the number of eigenfunctions to output
 #' @return Eigenfunctions and eigenvalues for both types of covariance functions
 estimate_eigenfunctions2 = function(K_b, K_w, pve1=0.95, pve2=0.95,
                                     fix_num_of_functions1=NA, fix_num_of_functions2 = NA){
@@ -1029,7 +1031,7 @@ func.cur = function(i.cur, X_dat, N){
 #' @param J Number of realizations per individual
 #' @param pve1 Proportion of variance explained for the first component
 #' @param pve2 Proportion of variance explained for the second component
-#' @param fix_number_of_functions if you dont want to used PVE you can fix the number of eigenfunctions to output
+#' @param fix_number_of_functions if you do not want to used PVE you can fix the number of eigenfunctions to output
 #' @param k number of basis functions in the
 #' @param bs0 The basis functions used when smoothing the covariance functions
 #' @return Mean function, eigenfunctions and eigenvalues for both types of covariance functions
@@ -1230,7 +1232,7 @@ K_v_func_over_j = function(i,j1, X_dat.cur){
 
   #get the row of data for the day and individual & scale by the
   d1 = X_dat.cur[j_cur_star, ]
-  #get all of the rows for the indivdual
+  #get all of the rows for the individual
   d2 = X_dat.cur[j1_star:j2_star, ]
   #to write exception when j1=J-1
   d2 = matrix(d2, ncol = D)
@@ -1290,7 +1292,7 @@ K_w_func_over_j = function(i,j1, X_dat.cur){
 
   #get the row of data for the day and individual & scale by the
   d1 = X_dat.cur[j_cur_star, ]
-  #get all of the rows for the indivdual
+  #get all of the rows for the individual
   d2 = X_dat.cur[j1_star:j2_star, ]
   #to write exception when j1=J-1
   d2 = matrix(d2, ncol = D)
@@ -1302,7 +1304,7 @@ K_w_func_over_j = function(i,j1, X_dat.cur){
 
 }
 
-#' Function used to esitmate the covariance fucntions in the multilevel scenario
+#' Function used to estimate the covariance functions in the multilevel scenario
 #' @param i.cur cur index
 #' @param N number of individuals
 #' @param X_dat Current indexed binary-valued functional data
@@ -1336,7 +1338,7 @@ k_w_func = function(i.cur, X_dat, N){
 #' @param J Number of realizations per individual
 #' @param pve1 Proportion of variance explained for the first component
 #' @param pve2 Proportion of variance explained for the second component
-#' @param fix_number_of_functions if you dont want to used PVE you can fix the number of eigenfunctions to output
+#' @param fix_number_of_functions if you do not want to used PVE you can fix the number of eigenfunctions to output
 #' @param k number of basis functions in the
 #' @param bs0 The basis functions used when smoothing the covariance functions
 #' @return Mean function, eigenfunctions and eigenvalues for both types of covariance functions
@@ -1433,7 +1435,7 @@ multilevel_linear_fpca = function(X_dat, J, pve1=0.95, pve2 = 0.95,
 
 
 
-#' Solve the GLMMM based on the Estimates of the scores for the multilevel scenario
+#' Solve the GLMM based on the Estimates of the scores for the multilevel scenario
 #' @param data_formatted NJ x D binary matrix
 #' @param J Number of curves per subject
 #' @param I N Number of subjects
@@ -1744,7 +1746,7 @@ nb_updated_scores_only = function(scores, classes, prior_g, scores_test, h = 1.0
 #' @param scores_test N_test x K matrix of scores in the testing set
 #' @param min.h min possible value for the multiplier
 #' @param max.h maximum possible value for the multiplier
-#' @param n_grid number of vlaues between min.h and max.h to search over
+#' @param n_grid number of values between min.h and max.h to search over
 #' @param CV Number of folds for cross validation
 #' @param return_h T/F to return the value of the multiplier
 #' @param return_prob T/F to return group Bayes classifier probability for each individual in testing set
@@ -2226,8 +2228,8 @@ fit_ajs_model = function(l, j_lags, s_mat_train, aic = F, classes, static_train=
 }
 
 
-#' function used to predict the group for new idivdiuals based on the latent states and the fitted gAR models
-#' @param i index of the current indivdual
+#' function used to predict the group for new individuals based on the latent states and the fitted gAR models
+#' @param i index of the current individual
 #' @param l the group which is currently being used
 #' @param p the lag of the current models
 #' @param models_ls Fitted gAR models for the various groups
@@ -2307,7 +2309,7 @@ predict_new_ind_group_model = function(i, l, p, models_ls, s_mat_test, static_te
 #' @param scores_test N_test x K matrix of scores in the testing set
 #' @param min.h min possible value for the multiplier
 #' @param max.h maximum possible value for the multiplier
-#' @param n_grid number of vlaues between min.h and max.h to search over
+#' @param n_grid number of values between min.h and max.h to search over
 #' @param CV Number of folds for cross validation
 #' @param return_h T/F to return the value of the multiplier
 #' @param return_prob T/F to return group Bayes classifier probability for each individual in testing set
@@ -2392,7 +2394,7 @@ nb_updated_grid_scores_cat_only = function(scores, cat_covariates_train, classes
 
       cur.levels = unique(c(unlist(cat_covariates_train[,p]), unlist(cat_covariates_test[,p])))
       alpha_new = 5
-      cat_covariates_train_cur_group = cat_covariates_train[which(Ys_train==i),]
+      cat_covariates_train_cur_group = cat_covariates_train[which(classes==i),]
       cur_cat = table(factor(unlist(cat_covariates_train_cur_group[,p]), cur.levels)) + alpha_new
       cur.var = cur_cat / sum(cur_cat)
 
@@ -2437,7 +2439,7 @@ nb_updated_grid_scores_cat_only = function(scores, cat_covariates_train, classes
 #' @param scores_test N_test x K matrix of scores in the testing set
 #' @param min.h min possible value for the multiplier
 #' @param max.h maximum possible value for the multiplier
-#' @param n_grid number of vlaues between min.h and max.h to search over
+#' @param n_grid number of values between min.h and max.h to search over
 #' @param CV Number of folds for cross validation
 #' @param s_mat_hat_train Matrix of estimated S data for training
 #' @param s_mat_hat_test Matrix of estimated S data for testing
@@ -2448,7 +2450,7 @@ nb_updated_grid_scores_cat_only = function(scores, cat_covariates_train, classes
 #' @param P_max number of lags in the gAR model
 #' @param static_train Covariates for the classifier in the training set accounts
 #' @param static_test Covariates for the classifier in the testing set accounts
-#' @param alpha_js Estimated probability oflatent states across the realizations
+#' @param alpha_js Estimated probability of latent states across the realizations
 #' @return predictions from the grid search
 nb_updated_grid_cat_only = function(scores, s_mat_hat_train, classes, cat_covariates_train, cat_covariates_test,
                            prior_g, scores_test, s_mat_hat_test, alpha_js = NA,
@@ -2553,14 +2555,14 @@ nb_updated_grid_cat_only = function(scores, s_mat_hat_train, classes, cat_covari
 #' @param s_mat_hat_test Matrix of estimated S data for testing
 #' @param min.h min possible value for the multiplier
 #' @param max.h maximum possible value for the multiplier
-#' @param n_grid number of vlaues between min.h and max.h to search over
+#' @param n_grid number of values between min.h and max.h to search over
 #' @param CV Number of folds for cross validation
 #' @param return_h T/F to return the value of the multiplier
 #' @param return_prob T/F to return group Bayes classifier probability for each individual in testing set
 #' @param static_train Covariates for the classifier in the training set accounts
 #' @param static_test Covariates for the classifier in the testing set accounts
 #' @param P_max number of lags in the gAR model
-#' @param alpha_js Estimated probability oflatent states across the realizations
+#' @param alpha_js Estimated probability of latent states across the realizations
 #' @return predictions from the grid search
 nb_updated_grid_cat = function(scores, s_mat_hat_train, classes, cat_covariates_train, cat_covariates_test,
                                prior_g, scores_test, s_mat_hat_test, alpha_js = NA,
@@ -2701,7 +2703,7 @@ nb_updated_grid_cat = function(scores, s_mat_hat_train, classes, cat_covariates_
 
         cur.levels = unique(c(unlist(cat_covariates_train[,p]), unlist(cat_covariates_test[,p])))
         alpha_new = 5
-        cat_covariates_train_cur_group = cat_covariates_train[which(Ys_train==i),]
+        cat_covariates_train_cur_group = cat_covariates_train[which(classes==i),]
         cur_cat = table(factor(unlist(cat_covariates_train_cur_group[,p]), cur.levels)) + alpha_new
         cur.var = cur_cat / sum(cur_cat)
 

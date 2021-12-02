@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{get_length_pve}
 \alias{get_length_pve}
-\title{Function: Get number of functions based on the pvs and eigenvalues}
+\title{Function: Get number of functions based on the pve and eigenvalues}
 \usage{
 get_length_pve(pve, vec, set_max_number = NA)
 }
@@ -17,5 +17,5 @@ get_length_pve(pve, vec, set_max_number = NA)
 The number of eigenfunctions and eigenvalues for KL-approximation
 }
 \description{
-Function: Get number of functions based on the pvs and eigenvalues
+Function: Get number of functions based on the pve and eigenvalues
 }

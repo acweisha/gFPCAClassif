@@ -36,7 +36,7 @@ nb_updated_grid(
 
 \item{s_mat_hat_test}{Latent state matrix of estimated values for the testing set accounts}
 
-\item{alpha_js}{Estimated probability oflatent states across the realizations}
+\item{alpha_js}{Estimated probability of latent states across the realizations}
 
 \item{min.h}{min possible value for the multiplier}
 

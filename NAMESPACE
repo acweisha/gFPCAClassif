@@ -1,1 +1,11 @@
 exportPattern("^[[:alpha:]]+")
+import(Matrix)
+import(arm)
+import(fda)
+import(kernlab)
+import(refund)
+import(splines)
+import(mgcv)
+importFrom("stats", "BIC", "approxfun", "binomial", "complete.cases",
+               "dbinom", "density", "gaussian", "integrate",
+               "rbinom", "rnorm", "sd")
