@@ -5,8 +5,8 @@ Version: 0.1.0
 Author: Anthony Weishampel
 Maintainer: Anthony Weishampel <acweisha@ncsu.edu>
 Depends: mgcv
-Description: Methods for classifying binary data through incorporating functional data analysis principal components. 
-    Use four spaces when indenting paragraphs within the Description.
+Description: Methods for classifying binary data through incorporating functional data analysis principal components (FPCA). 
+    The provided functions model and train classifiers for binary-valued functional data. The package presents model-based classification methods for the binary-valued functional data. The package accounts for multiple different scenarios of the data. All of these models are built under the assumption that the binary data are binary-valued observations of smooth latent functions. gFPCAClassif includes methods for modeling the data using generalized single-level FPCA (gsFPCA), generalized multi-level FPCA (gmFPCA), and generalized multi-level FPCA with inactive periods (gmFPCA+gAR). 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
